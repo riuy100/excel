@@ -9,6 +9,7 @@ from tkinter import ttk
 import time
 import os
 import threading
+import csv
 
 POLLING_DELAY = 250  # ms
 FILEPATH_PLACEHOLDER = "点击此处选择文件"
@@ -50,9 +51,9 @@ class ExcelProcessorGUI:
         print(f"加载文件中：{self.file_path}")
         if self.file_path.endswith(".xlsx"):
             workbook = openpyxl.load_workbook(self.file_path)
-            sheet = workbook["Sheet1"]
+            sheet = workbook[0]
             return sheet
-        else:
+        elif self.file_path.endswith(".xls"):
             # 读取 xls 文件
             workbook = xlrd.open_workbook(self.file_path)
             worksheet = workbook.sheet_by_index(0)
@@ -72,14 +73,29 @@ class ExcelProcessorGUI:
             # 不重新加载，下面的心电图结果解析会出问题
             workbook = openpyxl.load_workbook(temp_path)
             os.remove(temp_path)
-            worksheet_new = workbook["Sheet"]
+            worksheet_new = workbook[0]
             return worksheet_new
+        elif self.file_path.endswith("csv"):
+            workbook = openpyxl.Workbook()
+            worksheet = workbook.active
+            with open(self.file_path) as f:
+                reader = csv.reader(f, delimiter=':')
+                for row in reader:
+                    worksheet.append(row)
+            temp_path = f"./temp-{time.time()}.xlsx"
+            workbook.save(temp_path)
+            workbook = openpyxl.load_workbook(temp_path)
+            os.remove(temp_path)
+            worksheet_new = workbook[0]
+            return worksheet_new
+        else:
+            raise Exception
 
     # 选择要处理的 Excel 文件
     def choose_file(self, event):
         self.process_button['text'] = "处理"
         file_path = filedialog.askopenfilename(
-            title="请选择要处理的 Excel 文件", filetypes=[("Excel 文件", ["*.xlsx", "*.xls"])])
+            title="请选择要处理的 Excel 文件", filetypes=[("Excel 文件", ["*.xlsx", "*.xls", "*.csv"])])
         if file_path:
             self.file_path_var.set(file_path)
             self.status_label.config(text="已选择文件：" + file_path)
