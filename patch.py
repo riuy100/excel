@@ -1,5 +1,5 @@
 # python -m venv ./env
-# pyinstaller -F ./process.py -c --paths=./env/Lib/site-packages
+# pyinstaller -F ./patch.py -c --paths=./env/Lib/site-packages
 
 import openpyxl
 import xlrd
@@ -115,54 +115,16 @@ class ExcelProcessorGUI:
             df = pd.read_excel(self.file_path)
             return df
         elif self.file_path.endswith("csv"):
-            df = pd.read_csv(self.file_path, on_bad_lines='warn')
+            df = pd.read_csv(self.file_path)  
             return df
         else:
             raise Exception
 
     def process_inner(self, df):
         df = df.fillna('')
-        # 定义字典变量，用于记录每个人的所有检查项目和指标值
-        data_dict = {}
-
-        last_name = None
-        last_project = None
-
-        # 遍历 Excel 表格的每一行数据，
-        # 因为我们用 self.finished 监听了后台线程是否结束，
-        # 所以事实上只会有一个后台线程，这些数据不需要加锁，不会有并发问题
-        self.process_iter_max = len(df)
-        print(f"共计 {self.process_iter_max} 行数据")
-        self.process_iter = 0
-        for i, row in df.iterrows():
-            self.process_iter = i
-            row = list(row.to_dict().values())
-            name, gender, age, phone, company, project, value, interval = row[:8]
-            # 按照人名进行聚合，将每个人的所有检查项目和指标值放入一个列表中
-            if project == '':
-                # 心电图项目的数据可能会到下一行
-                if last_name != '' and name == '':
-                    data_dict[last_name][last_project] += name
-                continue
-            last_name = name
-            last_project = project
-            project_ref = project+"范围"
-            if name in data_dict:
-                data_dict[name][project] = value
-                data_dict[name][project_ref] = interval
-            else:
-                data_dict[name] = {"姓名": name, "性别": gender, "年龄": age,
-                                   "电话": phone, "单位": company, project: value, project_ref: interval}
-
-        print(
-            f"逐行加载完毕，开始进行分析")
-        # 将字典转换为 Pandas 数据帧
-        df_out = pd.DataFrame.from_dict(data_dict, orient='index')
-        print(
-            f"按姓名解析完毕，共解析到 {len(data_dict)} 人，每人 {len(df_out.columns)} 项数据，开始整理新表格")
-        if '血压(mmHg)' in df_out.columns:
-            df_out[['血压高压(mmHg)', '血压低压(mmHg)']] = df_out['血压(mmHg)'].str.split('/', expand=True)
-        return df_out
+        if '血压(mmHg)' in df.columns:
+            df[['血压高压(mmHg)', '血压低压(mmHg)']] = df['血压(mmHg)'].str.split('/', expand=True)
+        return df
 
 
 if __name__ == "__main__":

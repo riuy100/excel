@@ -23,6 +23,7 @@ jobs:
         python-version: "3.11"
     - run: pip install -r requirements.txt
     - run: pyinstaller -F ./process.py -c
+    - run: pyinstaller -F ./patch.py -c
     - name: Upload exe
       uses: actions/upload-artifact@v3
       with:
