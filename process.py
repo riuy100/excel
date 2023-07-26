@@ -10,6 +10,7 @@ import time
 import os
 import threading
 import pandas as pd
+import numpy as np
 
 POLLING_DELAY = 250  # ms
 FILEPATH_PLACEHOLDER = "点击此处选择文件"
@@ -161,7 +162,7 @@ class ExcelProcessorGUI:
         print(
             f"按姓名解析完毕，共解析到 {len(data_dict)} 人，每人 {len(df_out.columns)} 项数据，开始整理新表格")
         if '血压(mmHg)' in df_out.columns:
-            df_out[['血压高压(mmHg)', '血压低压(mmHg)']] = df_out['血压(mmHg)'].str.split('/', expand=True)
+            df_out[['血压高压(mmHg)', '血压低压(mmHg)']] = df_out['血压(mmHg)'].str.split('/', n=1, expand=True)
         return df_out
 
 

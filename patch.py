@@ -10,6 +10,7 @@ import time
 import os
 import threading
 import pandas as pd
+import numpy as np
 
 POLLING_DELAY = 250  # ms
 FILEPATH_PLACEHOLDER = "点击此处选择文件"
@@ -123,7 +124,7 @@ class ExcelProcessorGUI:
     def process_inner(self, df):
         df = df.fillna('')
         if '血压(mmHg)' in df.columns:
-            df[['血压高压(mmHg)', '血压低压(mmHg)']] = df['血压(mmHg)'].str.split('/', expand=True)
+            df[['血压高压(mmHg)', '血压低压(mmHg)']] = df['血压(mmHg)'].str.split('/', n=1, expand=True)
         return df
 
 
